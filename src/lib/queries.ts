@@ -140,14 +140,14 @@ async function getRelatedSkillMatches(
   return runQuery<RelatedMatchRow>(
     `
     MATCH (target:Skill {id: $skillId})
-    MATCH (target)-[rels:RELATED_TO*1..2]-(related:Skill)
+    MATCH path = (target)-[:RELATED_TO*1..2]-(related:Skill)
     WHERE related <> target
     MATCH (p:Person)-[hs:HAS_SKILL]->(related)
     WHERE hs.level >= $minLevel
-    WITH p, hs, related, rels,
-         reduce(strength = 1.0, r IN rels | strength * r.strength) AS pathStrength
+    WITH p, hs, related, path,
+         reduce(strength = 1.0, r IN relationships(path) | strength * r.strength) AS pathStrength
     WHERE pathStrength >= 0.25
-    WITH p, hs, related, pathStrength, size(rels) AS hops
+    WITH p, hs, related, pathStrength, length(path) AS hops
     ORDER BY pathStrength DESC
     WITH p, hs, head(collect({ name: related.name, pathStrength: pathStrength, hops: hops })) AS best
     OPTIONAL MATCH (p)-[:MEMBER_OF]->(t:Team)
@@ -443,7 +443,7 @@ export async function findShortestPath(
   const [row] = await runQuery<PathResult>(
     `
     MATCH (a:Person {id: $fromId}), (b:Person {id: $toId})
-    MATCH path = shortestPath((a)-[:KNOWS*..6]-(b))
+    MATCH path = shortestPath((a)-[:KNOWS*..8]-(b))
     RETURN [n IN nodes(path) | {id: n.id, name: n.name, title: n.title}] AS people,
            length(path) AS hops
     `,
