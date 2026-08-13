@@ -44,6 +44,13 @@ function getDriver(): Driver {
   }
 
   driver = neo4j.driver(uri, neo4j.auth.basic(user, password), {
+    // Cypher integers (count(), size(), etc.) otherwise come back as driver
+    // Integer instances ({low, high}), not plain JS numbers — React's RSC
+    // serialization rejects class instances passed through the component
+    // tree. Our counts are all well under Number.MAX_SAFE_INTEGER, so lossy
+    // conversion is a non-issue and this is simpler than converting every
+    // call site by hand.
+    disableLosslessIntegers: true,
     // Free-tier CognoDB instances cap at 200 connections total — stay well under that.
     maxConnectionPoolSize: 20,
   });
