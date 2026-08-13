@@ -94,11 +94,11 @@ graph LR
 | `(Person)-[:TOUCHED]->(Component)` | `commits`, `lastTouched` | code-ownership signal |
 | `(Person)-[:KNOWS]->(Person)` | `strength` (0–1) | stored one direction, always queried undirected — the collaboration graph |
 
-Seed data (see [`scripts/seed-data.ts`](scripts/seed-data.ts)): 10 teams, ~47 people, 34 skills with
-~32 hand-curated `RELATED_TO` edges, 12 projects with ~28 components, and a `KNOWS` graph built from
-team/project co-membership plus a handful of deliberate cross-team bridges — comfortably inside the
-free-tier sizing guidance, and dense enough for multi-hop traversals to return interesting, non-trivial
-results.
+Seed data (see [`scripts/seed-data.ts`](scripts/seed-data.ts)): 10 teams, 47 people, 34 skills with
+~32 hand-curated `RELATED_TO` edges, 12 projects with 22 components, and a `KNOWS` graph built from
+team/project co-membership plus a handful of deliberate cross-team bridges — 125 nodes and 516
+relationships in total, comfortably inside the free-tier sizing guidance, and dense enough for
+multi-hop traversals to return interesting, non-trivial results.
 
 ## The queries
 
