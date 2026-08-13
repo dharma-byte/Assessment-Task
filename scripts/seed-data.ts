@@ -183,6 +183,11 @@ export const PROJECTS: {
     description: "Real-time transaction risk scoring to catch fraudulent payments before settlement.",
     status: "active",
     team: "team-payments",
+    // Coverage here isn't hand-rigged — it falls out of the seeded RNG the same way
+    // it would from real staffing data. As of the committed seed, this project
+    // happens to land the richest gap example: Fraud Detection (critical) held by
+    // exactly one person, Python and Data Pipelines uncovered entirely. Re-running
+    // the seed with different data will shuffle which project shows this.
     requiredSkills: [["skill-fraud", 3], ["skill-python", 2], ["skill-data-pipelines", 2]],
     components: [
       { name: "risk-scoring-engine", path: "services/fraud/risk-scoring" },
@@ -219,8 +224,6 @@ export const PROJECTS: {
     description: "Automated regulatory reporting pipeline for financial audits.",
     status: "planned",
     team: "team-identity",
-    // Deliberately under-covered: no one on the team currently holds Compliance —
-    // this is the project the skill-gap query is meant to surface.
     requiredSkills: [["skill-compliance", 3], ["skill-python", 2], ["skill-postgres", 1]],
     components: [{ name: "reporting-pipeline", path: "services/compliance/reporting-pipeline" }],
   },
@@ -296,7 +299,6 @@ export const PROJECTS: {
     description: "Company-wide SLO program: tracing, alerting, and incident tooling.",
     status: "active",
     team: "team-sre",
-    // Deliberately under-covered on Observability relative to how many projects need it.
     requiredSkills: [["skill-observability", 3], ["skill-kubernetes", 2], ["skill-terraform", 2]],
     components: [
       { name: "slo-dashboard", path: "services/sre/slo-dashboard" },
@@ -521,11 +523,19 @@ function buildCollaborationGraph(): Knows[] {
     peopleByTeam.get(p.teamId)!.push(p);
   }
 
-  // Within-team familiarity: most teammates know each other reasonably well.
+  // Within-team familiarity. A random-recursive-tree first (each member links to
+  // one random *earlier* member) guarantees every team is internally connected —
+  // relying on chance() alone for this, as an earlier version did, occasionally
+  // left a team member isolated. Extra probabilistic edges on top add richness
+  // (multiple routes, varying strength) without weakening that guarantee.
   for (const members of peopleByTeam.values()) {
+    for (let i = 1; i < members.length; i++) {
+      const j = Math.floor(rand() * i);
+      addEdge(members[i].id, members[j].id, 0.6 + rand() * 0.4);
+    }
     for (let i = 0; i < members.length; i++) {
       for (let j = i + 1; j < members.length; j++) {
-        if (chance(0.65)) addEdge(members[i].id, members[j].id, 0.5 + rand() * 0.5);
+        if (chance(0.5)) addEdge(members[i].id, members[j].id, 0.5 + rand() * 0.5);
       }
     }
   }
@@ -544,20 +554,28 @@ function buildCollaborationGraph(): Knows[] {
     }
   }
 
-  // A handful of deliberate cross-cluster bridges, so the path finder has
-  // interesting (non-trivial, non-disconnected) routes to demonstrate.
-  const bridges: [string, string][] = [
-    ["team-payments", "team-identity"],
-    ["team-payments", "team-sre"],
-    ["team-search", "team-ranking"],
-    ["team-mobile", "team-design-systems"],
-    ["team-data", "team-devinfra"],
-    ["team-growth", "team-search"],
-  ];
-  for (const [teamA, teamB] of bridges) {
-    const a = pick(peopleByTeam.get(teamA) ?? []);
-    const b = pick(peopleByTeam.get(teamB) ?? []);
-    if (a && b) addEdge(a.id, b.id, 0.4 + rand() * 0.3);
+  // Inter-team backbone: every team connects through one shared hub team
+  // (star topology, not a chain) so the whole org is a single connected
+  // component and any two people are reachable in a small number of hops —
+  // a linear chain of 10 teams could put worst-case pairs 9+ hops apart;
+  // a star caps cross-team distance at 2. Payments is the hub simply because
+  // it's the largest team, not for any narrative reason.
+  const hubTeam = "team-payments";
+  for (const team of TEAMS) {
+    if (team.id === hubTeam) continue;
+    const a = pick(peopleByTeam.get(hubTeam) ?? []);
+    const b = pick(peopleByTeam.get(team.id) ?? []);
+    if (a && b) addEdge(a.id, b.id, 0.3 + rand() * 0.3);
+  }
+  // A handful of extra direct cross-team links, so paths between non-hub teams
+  // aren't *always* routed through the same one or two hub people.
+  for (let k = 0; k < 10; k++) {
+    const teamA = pick(TEAMS);
+    const teamB = pick(TEAMS);
+    if (teamA.id === teamB.id) continue;
+    const a = pick(peopleByTeam.get(teamA.id) ?? []);
+    const b = pick(peopleByTeam.get(teamB.id) ?? []);
+    if (a && b) addEdge(a.id, b.id, 0.3 + rand() * 0.3);
   }
 
   return edges;
