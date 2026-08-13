@@ -4,7 +4,7 @@
 
 > "Who can help me with X?" "Who should review this PR?" "Is this project one departure away from losing its only expert?" — questions about *connections*, answered by walking a graph instead of joining tables.
 
-Live demo: _add your hosted URL here_
+Live demo: https://assessment-task-silk.vercel.app/
 Screen recording: _add your recording link here_
 
 ---
