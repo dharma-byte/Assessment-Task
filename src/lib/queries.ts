@@ -42,11 +42,18 @@ export async function getOverviewStats(): Promise<OverviewStats> {
     CALL { MATCH (t:Team) RETURN count(t) AS teams }
     CALL { MATCH (s:Skill) RETURN count(s) AS skills }
     CALL { MATCH (pr:Project) RETURN count(pr) AS projects }
+    // Intentionally OPTIONAL MATCH + collect() + size()=0 rather than the more
+    // idiomatic WHERE NOT EXISTS { ... }: verified against live data that
+    // CognoDB doesn't correlate the outer pr/reqSkill into that NOT EXISTS
+    // subquery correctly (it returned 28 "gaps" out of 34 skills total, vs.
+    // the real 4 confirmed by recomputing per-project coverage directly).
+    // This OPTIONAL MATCH form is the same pattern getProjectDetail's
+    // per-project coverage query already uses, and gives the correct count.
     CALL {
       MATCH (pr:Project)-[:REQUIRES_SKILL]->(reqSkill:Skill)
-      WHERE NOT EXISTS {
-        MATCH (pr)<-[:WORKED_ON]-(:Person)-[:HAS_SKILL]->(reqSkill)
-      }
+      OPTIONAL MATCH (pr)<-[:WORKED_ON]-(member:Person)-[:HAS_SKILL]->(reqSkill)
+      WITH pr, reqSkill, collect(DISTINCT member) AS coveredBy
+      WHERE size(coveredBy) = 0
       RETURN count(DISTINCT reqSkill) AS skillGaps
     }
     RETURN people, teams, skills, projects, skillGaps
