@@ -210,5 +210,24 @@ button instead of a stack trace. The top nav independently shows a live connecti
 
 ## Screenshots
 
-_Add screenshots here once the app is running against seeded data — e.g. Find an Expert results,
-a project's skill-gap table, and the path finder._
+**Dashboard** — live overview stats and active projects.
+
+![Dashboard](screenshots/01-home.png)
+
+**Find an Expert** — ranked, explained matches (direct skill, skill-adjacency traversal, and
+collaboration-network distance).
+
+![Find an Expert](screenshots/02-experts.png)
+
+**Project detail** — required-skill coverage (including a single-point-of-coverage warning) and
+commit-based reviewer suggestions.
+
+![Project detail](screenshots/03-project-fraud-shield.png)
+
+**Path finder** — shortest collaboration-graph path between two people.
+
+![Path finder](screenshots/04-path-finder.png)
+
+**Person profile** — skills, current projects, and direct collaborators.
+
+![Person profile](screenshots/05-person-detail.png)
